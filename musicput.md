@@ -12,57 +12,34 @@ You should place your MP3 files here.
 /public
   /music
     test.mp3
-    ost_1.mp3
-    ost_2.mp3
-    light_1.mp3
-    fav_1.mp3
-    ...
+    1.1Morning (Clear).mp3
+    1.2Morning · Light Rain.mp3
+    ... and so on
 ```
 
-## 2. Naming Convention
+## 2. Updated File List (Light Music)
 
-You can name your files whatever you want, but you must update the code to match. 
-It is easier if you use simple names.
+Please ensure the following files exist in `public/music` for the **LIGHT** radio channel to work correctly:
 
-**Suggested Naming:**
-*   **OST Tracks:** `ost_1.mp3`, `ost_2.mp3`
-*   **Light Music:** `light_1.mp3`, `light_2.mp3`
-*   **Personal:** `personal_1.mp3`, `fav_1.mp3`
+*   `1.1Morning (Clear).mp3`
+*   `1.2Morning · Light Rain.mp3`
+*   `1.3Morning · Heavy Rain.mp3`
+*   `1.4Dusk (Clear).mp3`
+*   `1.5Dusk · Light Rain.mp3`
+*   `1.6Nightfall · Mystery.mp3`
+*   `1.7Nightfall · Light Rain.mp3`
+*   `1.8Nightfall · Heavy Rain.mp3`
+*   `1.9Overcast · Light Rain.mp3`
+*   `1.10Overcast · Heavy Rain.mp3`
+*   `1.11Overcast · Torrential Rain.mp3`
+*   `1.12Overcast · Dense Fog.mp3`
+*   `1.13Overcast · Light Snow.mp3`
 
-## 3. Updating the Database Code
+## 3. Other Categories
 
-Open `src/pages/MusicPage.tsx` and find `OST_DATABASE`.
-It looks like this:
+*   **OST Tracks:** Add files like `ost_1.mp3`, `ost_2.mp3` and update the code if needed.
+*   **Personal:** Add `test.mp3`, `fav_1.mp3`.
 
-```typescript
-const OST_DATABASE = [
-  {
-    id: 'OST',
-    label: 'ARCHIVE // OST',
-    tracks: [
-       // Add your OST files here
-      { id: '1.1', title: 'Song Name', artist: 'Artist', filename: 'ost_1.mp3' },
-    ]
-  },
-  {
-    id: 'LGT',
-    label: 'RADIO // LIGHT',
-    tracks: [
-       // Add your Light Music files here
-      { id: '2.1', title: 'Rain Sound', artist: 'Nature', filename: 'light_1.mp3' },
-    ]
-  },
-  {
-    id: 'PVT',
-    label: 'CASSETTE // PERSONAL',
-    tracks: [
-       // Add your Personal songs here
-      { id: '3.1', title: 'My Song', artist: 'Me', filename: 'fav_1.mp3' },
-    ]
-  }
-];
-```
+## 4. Troubleshooting
 
-**Important:**
-1. The `filename` must match exactly what is in the `public/music` folder.
-2. If the filename is wrong, the Diagnostic Terminal will show `HTTP: 404 (MISSING)`.
+If you see `HTTP: 404 (MISSING)` in the SysLog terminal (top right corner of config page), checking the spelling of your filenames. They must match exactly, including spaces and dots.

@@ -110,6 +110,32 @@ const App: React.FC = () => {
     });
   }, []);
 
+  // Keyboard Navigation Support (Debug)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowUp':
+          navigateVertical('up');
+          break;
+        case 'ArrowDown':
+          navigateVertical('down');
+          break;
+        case 'ArrowLeft':
+          navigateHorizontal('left');
+          break;
+        case 'ArrowRight':
+          navigateHorizontal('right');
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigateHorizontal, navigateVertical]);
+
+
   // Unified Touch Handler (Mapped to Logic)
   const onTouchStart = (e: React.TouchEvent) => {
     touchStart.current = {
@@ -184,42 +210,6 @@ const App: React.FC = () => {
       {/* Texture Overlays */}
       <div className="noise-overlay"></div>
       <div className="scanlines"></div>
-
-      {/* Debug Directional Buttons (For non-touch debugging) */}
-      <div className={`fixed z-[9999] opacity-50 hover:opacity-100 transition-opacity ${isPortrait ? 'bottom-8 right-8 rotate-90 origin-bottom-right' : 'bottom-8 right-8'}`}>
-          <div className="flex flex-col items-center gap-2">
-              <button 
-                onClick={() => navigateVertical('up')}
-                className="w-10 h-10 bg-retro-gold/20 border border-retro-gold text-retro-gold rounded flex items-center justify-center active:bg-retro-gold active:text-retro-black shadow-[0_0_10px_rgba(197,160,89,0.2)]"
-                title="Up / Config"
-              >
-                ▲
-              </button>
-              <div className="flex gap-2">
-                  <button 
-                    onClick={() => navigateHorizontal('left')}
-                    className="w-10 h-10 bg-retro-gold/20 border border-retro-gold text-retro-gold rounded flex items-center justify-center active:bg-retro-gold active:text-retro-black shadow-[0_0_10px_rgba(197,160,89,0.2)]"
-                    title="Previous Page"
-                  >
-                    ◀
-                  </button>
-                  <button 
-                    onClick={() => navigateVertical('down')}
-                    className="w-10 h-10 bg-retro-gold/20 border border-retro-gold text-retro-gold rounded flex items-center justify-center active:bg-retro-gold active:text-retro-black shadow-[0_0_10px_rgba(197,160,89,0.2)]"
-                    title="Down / Sleep"
-                  >
-                    ▼
-                  </button>
-                  <button 
-                    onClick={() => navigateHorizontal('right')}
-                    className="w-10 h-10 bg-retro-gold/20 border border-retro-gold text-retro-gold rounded flex items-center justify-center active:bg-retro-gold active:text-retro-black shadow-[0_0_10px_rgba(197,160,89,0.2)]"
-                    title="Next Page"
-                  >
-                    ▶
-                  </button>
-              </div>
-          </div>
-      </div>
 
       {/* --- GLOBAL ALARM OVERLAY (High Z-Index, Visible anywhere) --- */}
       <div 

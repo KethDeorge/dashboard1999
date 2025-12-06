@@ -3,40 +3,42 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { PageProps, ViewMode } from '../types';
 
 // Retro 1999 Style Database - 3 Categories
+// ORDER CHANGED: Light First
 const OST_DATABASE = [
+  {
+    id: 'LGT',
+    label: 'RADIO // LIGHT',
+    tracks: [
+      { id: '1.1', title: 'Morning', artist: 'Clear', filename: '1.1Morning (Clear).mp3' },
+      { id: '1.2', title: 'Morning', artist: 'Light Rain', filename: '1.2Morning · Light Rain.mp3' },
+      { id: '1.3', title: 'Morning', artist: 'Heavy Rain', filename: '1.3Morning · Heavy Rain.mp3' },
+      { id: '1.4', title: 'Dusk', artist: 'Clear', filename: '1.4Dusk (Clear).mp3' },
+      { id: '1.5', title: 'Dusk', artist: 'Light Rain', filename: '1.5Dusk · Light Rain.mp3' },
+      { id: '1.6', title: 'Nightfall', artist: 'Mystery', filename: '1.6Nightfall · Mystery.mp3' },
+      { id: '1.7', title: 'Nightfall', artist: 'Light Rain', filename: '1.7Nightfall · Light Rain.mp3' },
+      { id: '1.8', title: 'Nightfall', artist: 'Heavy Rain', filename: '1.8Nightfall · Heavy Rain.mp3' },
+      { id: '1.9', title: 'Overcast', artist: 'Light Rain', filename: '1.9Overcast · Light Rain.mp3' },
+      { id: '1.10', title: 'Overcast', artist: 'Heavy Rain', filename: '1.10Overcast · Heavy Rain.mp3' },
+      { id: '1.11', title: 'Overcast', artist: 'Torrential', filename: '1.11Overcast · Torrential Rain.mp3' },
+      { id: '1.12', title: 'Overcast', artist: 'Dense Fog', filename: '1.12Overcast · Dense Fog.mp3' },
+      { id: '1.13', title: 'Overcast', artist: 'Light Snow', filename: '1.13Overcast · Light Snow.mp3' },
+    ]
+  },
   {
     id: 'OST',
     label: 'ARCHIVE // OST',
     tracks: [
       { 
-        id: '1.1', 
+        id: '2.1', 
         title: 'The Storm', 
         artist: 'Adam Gubman', 
-        filename: 'ost_1.mp3' // Example filename
-      },
-      { 
-        id: '1.2', 
-        title: 'Satin Matin', 
-        artist: 'Vertin', 
-        filename: 'ost_2.mp3' 
-      }
-    ]
-  },
-  {
-    id: 'LGT',
-    label: 'RADIO // LIGHT',
-    tracks: [
-      { 
-        id: '2.1', 
-        title: 'Rainy Mood', 
-        artist: 'Ambience', 
-        filename: 'light_1.mp3' 
+        filename: 'ost_1.mp3' 
       },
       { 
         id: '2.2', 
-        title: 'Jazz Bar', 
-        artist: 'Unknown', 
-        filename: 'light_2.mp3' 
+        title: 'Satin Matin', 
+        artist: 'Vertin', 
+        filename: 'ost_2.mp3' 
       }
     ]
   },
@@ -70,7 +72,12 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isDbOpen, setIsDbOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>('OST'); // Default to first category
+  const [selectedCategory, setSelectedCategory] = useState<string | null>('LGT'); // Default to Light
+  const [loopMode, setLoopMode] = useState<'playlist' | 'single'>('playlist');
+  
+  // Progress Bar State
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   
   // --- DEBUG STATE ---
   const [debugInfo, setDebugInfo] = useState({
@@ -100,7 +107,8 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
   // --- AUDIO ACTIONS ---
 
   const getTrackPath = (filename: string) => {
-      return `music/${filename}`;
+      // Encode URI component to handle spaces and special chars in filenames
+      return `music/${encodeURIComponent(filename)}`;
   };
 
   const loadTrack = (index: number) => {
@@ -111,8 +119,9 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
       
       setIsLoading(true);
       setCurrentTrackIndex(index);
+      setCurrentTime(0); // Reset time on new track
       
-      setDebugInfo(prev => ({ ...prev, src, error: null, httpStatus: 'CHECKING...' }));
+      setDebugInfo(prev => ({ ...prev, src: decodeURIComponent(src), error: null, httpStatus: 'CHECKING...' }));
       checkFileAccess(src);
 
       audioRef.current.src = src;
@@ -145,6 +154,10 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
       } else {
           audioRef.current.pause();
       }
+  };
+
+  const toggleLoopMode = () => {
+      setLoopMode(prev => prev === 'playlist' ? 'single' : 'playlist');
   };
 
   const nextTrack = () => {
@@ -187,12 +200,46 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
       setDebugInfo(prev => ({ ...prev, error: msg }));
   };
 
+  // Time Updates
+  const onTimeUpdate = () => {
+      if (audioRef.current) {
+          setCurrentTime(audioRef.current.currentTime);
+      }
+  };
+
+  const onLoadedMetadata = () => {
+      if (audioRef.current) {
+          setDuration(audioRef.current.duration);
+      }
+  };
+
+  // Seek Handler
+  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!audioRef.current || !duration) return;
+      
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, x / rect.width));
+      const newTime = pct * duration;
+      
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+  };
+
+  // Handle Track End based on Loop Mode
+  const onEnded = () => {
+      if (loopMode === 'playlist') {
+          nextTrack();
+      }
+      // If loopMode is single, the <audio loop> attribute handles it automatically
+  };
+
   // Initial Load
   useEffect(() => {
      if (audioRef.current && !audioRef.current.src) {
          const firstSrc = getTrackPath(allTracks[0].filename);
          audioRef.current.src = firstSrc;
-         setDebugInfo(prev => ({ ...prev, src: firstSrc }));
+         setDebugInfo(prev => ({ ...prev, src: decodeURIComponent(firstSrc) }));
          checkFileAccess(firstSrc);
      }
   }, []);
@@ -216,11 +263,14 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
       
       <audio 
         ref={audioRef}
+        loop={loopMode === 'single'} 
         onPlay={onPlay}
         onPause={onPause}
         onCanPlay={onCanPlay}
-        onEnded={nextTrack}
+        onEnded={onEnded}
         onError={onError}
+        onTimeUpdate={onTimeUpdate}
+        onLoadedMetadata={onLoadedMetadata}
         preload="auto"
       />
 
@@ -248,20 +298,50 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
           absolute inset-0 transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] z-10 flex flex-col justify-end p-8 md:p-12
           ${viewMode === ViewMode.MAIN ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-10 pointer-events-none'}
       `}>
-          <div className="w-full max-w-2xl flex flex-col gap-8">
-              <div className="flex flex-col gap-6">
-                  <div className="flex flex-col gap-1 pl-2">
-                      <div className="flex items-center gap-3">
-                          <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${isPlaying ? 'bg-retro-green shadow-[0_0_8px_#22c55e]' : 'bg-retro-red'}`}></div>
-                          <span className="font-mono text-xs tracking-[0.3em] text-retro-ink/60 uppercase">
-                              {isLoading ? 'LOADING...' : (isPlaying ? 'ACTIVE' : 'READY')}
-                          </span>
+          
+          {/* Loop Toggle Button - ABSOLUTE TOP LEFT OF MAIN VIEW CONTAINER */}
+          <div className="absolute top-8 left-8 md:top-12 md:left-12">
+              <button 
+                  onClick={toggleLoopMode}
+                  className={`
+                    group w-[12vmin] h-[12vmin] md:w-[6vmin] md:h-[6vmin] flex items-center justify-center border-2 transition-all rounded-sm bg-retro-paper/80 backdrop-blur-sm
+                    ${loopMode === 'single' ? 'border-retro-gold text-retro-gold' : 'border-retro-gray/40 text-retro-ink/50 hover:border-retro-ink hover:text-retro-ink'}
+                  `}
+                  title={loopMode === 'single' ? "Single Loop" : "Playlist Loop"}
+              >
+                   {loopMode === 'single' ? (
+                       <div className="relative">
+                            <svg className="w-[6vmin] h-[6vmin] md:w-[3vmin] md:h-[3vmin]" fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+                            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[2.5vmin] md:text-[1.2vmin] font-bold bg-retro-paper rounded-full px-0.5 leading-none">1</span>
+                       </div>
+                   ) : (
+                        <svg className="w-[6vmin] h-[6vmin] md:w-[3vmin] md:h-[3vmin]" fill="currentColor" viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+                   )}
+              </button>
+          </div>
+
+          <div className="w-full max-w-2xl flex flex-col gap-6">
+              
+              <div className="flex flex-col gap-6 relative">
+                  
+                  {/* Status Row */}
+                  <div className="flex items-end justify-between pl-2">
+                      <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-3">
+                              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${isPlaying ? 'bg-retro-green shadow-[0_0_8px_#22c55e]' : 'bg-retro-red'}`}></div>
+                              <span className="font-mono text-xs tracking-[0.3em] text-retro-ink/60 uppercase">
+                                  {isLoading ? 'LOADING...' : (isPlaying ? 'ACTIVE' : 'READY')}
+                              </span>
+                          </div>
                       </div>
                   </div>
-                  <div className="flex items-center gap-[5vmin]">
+
+                  {/* Big Playback Buttons */}
+                  <div className="flex items-center gap-[5vmin] relative z-20">
                       <button onClick={prevTrack} className="group w-[10vmin] h-[10vmin] flex items-center justify-center rounded-full border-2 border-retro-gray/20 hover:border-retro-ink hover:bg-retro-ink transition-all">
                           <svg className="w-[4vmin] h-[4vmin] text-retro-ink group-hover:text-retro-paper" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
                       </button>
+                      
                       <button 
                           onClick={togglePlay}
                           className={`
@@ -276,11 +356,27 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
                               <svg className="w-[6vmin] h-[6vmin] ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                           )}
                       </button>
+                      
                       <button onClick={nextTrack} className="group w-[10vmin] h-[10vmin] flex items-center justify-center rounded-full border-2 border-retro-gray/20 hover:border-retro-ink hover:bg-retro-ink transition-all">
                            <svg className="w-[4vmin] h-[4vmin] text-retro-ink group-hover:text-retro-paper" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
                       </button>
                   </div>
+
+                  {/* MAIN VIEW PROGRESS BAR (Absolute Bottom, Minimal) */}
+                  <div 
+                        className="absolute -bottom-6 left-0 right-0 h-1 bg-retro-gray/20 cursor-pointer group hover:h-1.5 transition-all z-10"
+                        onClick={handleProgressClick}
+                   >
+                        <div 
+                            className="h-full bg-retro-ink transition-all duration-100 ease-linear relative"
+                            style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+                        >
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2 h-2 bg-retro-gold rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"></div>
+                        </div>
+                   </div>
+
               </div>
+
           </div>
       </div>
 
@@ -292,7 +388,7 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
           ${viewMode === ViewMode.CONFIG ? 'translate-y-0' : '-translate-y-full'}
       `}>
            
-           {/* 1. FLOATING DIAGNOSTIC WIDGET (Top Right, Absolute, Non-intrusive) */}
+           {/* 1. FLOATING DIAGNOSTIC WIDGET (Top Right) */}
            <div className={`
                 absolute top-[4vmin] right-[4vmin] z-50 transition-all duration-300
                 ${isDbOpen ? 'opacity-0 pointer-events-none translate-x-10' : 'opacity-100 pointer-events-auto translate-x-0'}
@@ -311,6 +407,7 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
                        <div className="text-[1vmin] flex flex-col gap-0.5">
                            <div className="truncate"><span className="text-gray-500">SRC:</span> {debugInfo.src || 'NULL'}</div>
                            <div><span className="text-gray-500">ST:</span> {debugInfo.readyState}</div>
+                           <div><span className="text-gray-500">LOOP:</span> {loopMode.toUpperCase()}</div>
                            {debugInfo.error && (
                                <div className="text-retro-red font-bold animate-pulse">{debugInfo.error}</div>
                            )}
@@ -325,7 +422,7 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
                    
                    <div className="font-mono text-xs text-retro-gold tracking-[0.5em] mb-6">AUDIO_LOG // {selectedCategory}</div>
                    
-                   <div className="flex flex-col gap-4 mb-10">
+                   <div className="flex flex-col gap-4 mb-6">
                        <h1 className="text-[12vmin] md:text-[10vmin] font-serif font-bold text-retro-ink leading-[0.9] tracking-tight drop-shadow-sm break-words">
                            {currentSong.title}
                        </h1>
@@ -334,14 +431,14 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
                        </h2>
                    </div>
                    
-                   {/* Visualizer / Progress Bar Aesthetic */}
-                   <div className="w-full max-w-[60%] h-2 bg-retro-gray/10 mb-10 flex items-center gap-1 overflow-hidden relative">
+                   {/* VISUALIZER BAR (REVERTED TO DECORATIVE) */}
+                   <div className="w-full h-1 bg-retro-gray/20 mb-8 flex items-center gap-2 overflow-hidden">
                         {isLoading ? (
                             <div className="h-full w-full bg-retro-gold animate-[scan_1s_linear_infinite] origin-left"></div>
                         ) : (
                             <>
-                                <div className="h-full w-[30%] bg-retro-gold/60"></div>
-                                <div className="h-full flex-1 bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(0,0,0,0.1)_4px,rgba(0,0,0,0.1)_8px)]"></div>
+                                <div className="h-full w-1/3 bg-retro-gold/50"></div>
+                                <div className="h-full flex-1 bg-retro-gray/10 repeating-linear-gradient-45"></div>
                             </>
                         )}
                    </div>
@@ -370,13 +467,13 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
                     
                     <div className="flex gap-4 h-full overflow-hidden pb-4">
                         {/* Category List */}
-                        <div className="w-[30%] flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-2">
+                        <div className="w-[30%] flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-2 pt-2">
                              {OST_DATABASE.map(cat => (
                                  <button
                                     key={cat.id}
                                     onClick={() => setSelectedCategory(cat.id)}
                                     className={`
-                                        text-left font-mono text-xs py-3 px-2 border-l-2 transition-all
+                                        text-left font-mono text-xs py-4 px-2 border-l-2 transition-all
                                         ${selectedCategory === cat.id 
                                             ? 'border-retro-gold bg-retro-gold/10 text-retro-ink font-bold' 
                                             : 'border-retro-gray/20 text-retro-gray hover:border-retro-gray/50'}
@@ -388,8 +485,8 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
                              ))}
                         </div>
 
-                        {/* Track List */}
-                        <div className="flex-1 flex flex-col gap-2 overflow-y-auto custom-scrollbar pb-8">
+                        {/* Track List - Optimized for Mobile Touch */}
+                        <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pb-10 pr-1 touch-pan-y">
                             {selectedCategory ? (
                                 OST_DATABASE.find(c => c.id === selectedCategory)?.tracks.map((track) => {
                                     const isCurrent = track.id === currentSong.id;
@@ -398,15 +495,15 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
                                             key={track.id}
                                             onClick={() => playTrackById(track.id)}
                                             className={`
-                                                group text-left font-mono text-xs p-3 border hover:border-retro-gold transition-all relative overflow-hidden
+                                                group text-left font-mono text-xs p-4 border transition-all relative overflow-hidden shrink-0 active:scale-[0.98]
                                                 ${isCurrent 
                                                     ? 'bg-retro-ink text-retro-gold border-retro-ink shadow-md' 
-                                                    : 'bg-retro-paper-dark text-retro-ink border-retro-gray/20'}
+                                                    : 'bg-retro-paper-dark text-retro-ink border-retro-gray/20 hover:border-retro-gold'}
                                             `}
                                         >
                                             <div className="relative z-10 flex justify-between items-center">
-                                                <div className="flex flex-col overflow-hidden mr-2">
-                                                     <span className="truncate font-bold">{track.title}</span>
+                                                <div className="flex flex-col overflow-hidden mr-3 gap-1">
+                                                     <span className="truncate font-bold text-sm leading-tight">{track.title}</span>
                                                      <span className="text-[10px] opacity-60 truncate">{track.artist}</span>
                                                 </div>
                                                 {isCurrent && <span className="animate-pulse text-xs">▶</span>}

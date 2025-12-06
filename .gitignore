@@ -1,24 +1,40 @@
+# Dependencies
+node_modules/
+
+# Production
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+
+# System Files
+.DS_Store
+Thumbs.db
+
 # Logs
-logs
-*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
 .idea
-.DS_Store
+.vscode
 *.suo
-*.ntvs*
+*.ntvs
 *.njsproj
 *.sln
 *.sw?
+
+# Music Files (Ignore local audio files)
+public/music/*.mp3
+public/music/*.wav
+public/music/*.flac
+public/music/*.ogg
+public/music/*.m4a
+public/music/*.aac
+
+# Keep the directory structure and readme
+!public/music/README.txt
+!public/music/README.md
