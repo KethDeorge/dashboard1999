@@ -3,18 +3,16 @@ import { MusicTrack } from '../types';
 
 const MOCK_PLAYLIST: MusicTrack[] = [
   {
+    id: 'mock_1',
     title: "Satin Matin",
     artist: "Vertin",
-    album: "The Storm",
-    coverUrl: "https://picsum.photos/400/400?grayscale",
-    duration: 184
+    filename: "mock_1.mp3"
   },
   {
+    id: 'mock_2',
     title: "London Fog",
     artist: "Sonetto",
-    album: "1999 Archive",
-    coverUrl: "https://picsum.photos/401/401?grayscale",
-    duration: 210
+    filename: "mock_2.mp3"
   }
 ];
 

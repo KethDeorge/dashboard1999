@@ -6,40 +6,44 @@ The Music Player supports 3 distinct categories. Follow the instructions below t
 ## 1. Directory Structure
 
 Go to your project folder: `public/music`.
-You should place your MP3 files here.
+You should place your audio files here.
+
+**Supported Formats:** `.mp3`, `.m4a` (AAC), `.wav`, `.ogg`.
 
 ```
 /public
   /music
     test.mp3
-    1.1Morning (Clear).mp3
-    1.2Morning · Light Rain.mp3
+    1_1Morning(Clear).mp3
+    3_1Stultifera_Navis.m4a
     ... and so on
 ```
 
-## 2. Updated File List (Light Music)
+## 2. Updated File List
 
-Please ensure the following files exist in `public/music` for the **LIGHT** radio channel to work correctly:
+### A. LIGHT (Radio)
+*   `1_1Morning(Clear).mp3`
+*   `1_2Morning_Light_Rain.mp3`
+*   ... (up to 1_13)
 
-*   `1.1Morning (Clear).mp3`
-*   `1.2Morning · Light Rain.mp3`
-*   `1.3Morning · Heavy Rain.mp3`
-*   `1.4Dusk (Clear).mp3`
-*   `1.5Dusk · Light Rain.mp3`
-*   `1.6Nightfall · Mystery.mp3`
-*   `1.7Nightfall · Light Rain.mp3`
-*   `1.8Nightfall · Heavy Rain.mp3`
-*   `1.9Overcast · Light Rain.mp3`
-*   `1.10Overcast · Heavy Rain.mp3`
-*   `1.11Overcast · Torrential Rain.mp3`
-*   `1.12Overcast · Dense Fog.mp3`
-*   `1.13Overcast · Light Snow.mp3`
+### B. OST (Archive)
+*   `ost_1.mp3`
+*   `ost_2.mp3`
 
-## 3. Other Categories
+### C. ARKNIGHTS (Cassette)
+*   `3_1Stultifera_Navis.m4a`
+*   `3_2Here_in_Vernal_Terrene.m4a`
+*   `3_3Epilogue.m4a`
+*   `3_4A_Toda_Vela.m4a`
+*   `3_5March_of_Gobbling_Howls.m4a`
+*   `3_6Mystic_Light_Quest.m4a`
+*   `3_7Awaken.m4a`
+*   `3_8Requiem.m4a`
+*   `3_9Renegade.m4a`
+*   `3_10Endospore.m4a`
+*   `3_11ManiFesto.m4a`
 
-*   **OST Tracks:** Add files like `ost_1.mp3`, `ost_2.mp3` and update the code if needed.
-*   **Personal:** Add `test.mp3`, `fav_1.mp3`.
+## 3. Troubleshooting
 
-## 4. Troubleshooting
-
-If you see `HTTP: 404 (MISSING)` in the SysLog terminal (top right corner of config page), checking the spelling of your filenames. They must match exactly, including spaces and dots.
+*   **File Not Found:** If you see `ERR:4` in the SysLog, check the filename spelling. Spaces and underscores matter!
+*   **Format Issue:** If you see `ERR:3 (DECODE)`, the file might be corrupted or use an unsupported codec.

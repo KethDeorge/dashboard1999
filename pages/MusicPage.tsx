@@ -1,278 +1,44 @@
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { PageProps, ViewMode } from '../types';
+import { OST_DATABASE } from '../constants';
 
-// Retro 1999 Style Database - 3 Categories
-// ORDER CHANGED: Light First
-const OST_DATABASE = [
-  {
-    id: 'LGT',
-    label: 'RADIO // LIGHT',
-    tracks: [
-      { id: '1.1', title: 'Morning', artist: 'Clear', filename: '1.1Morning (Clear).mp3' },
-      { id: '1.2', title: 'Morning', artist: 'Light Rain', filename: '1.2Morning · Light Rain.mp3' },
-      { id: '1.3', title: 'Morning', artist: 'Heavy Rain', filename: '1.3Morning · Heavy Rain.mp3' },
-      { id: '1.4', title: 'Dusk', artist: 'Clear', filename: '1.4Dusk (Clear).mp3' },
-      { id: '1.5', title: 'Dusk', artist: 'Light Rain', filename: '1.5Dusk · Light Rain.mp3' },
-      { id: '1.6', title: 'Nightfall', artist: 'Mystery', filename: '1.6Nightfall · Mystery.mp3' },
-      { id: '1.7', title: 'Nightfall', artist: 'Light Rain', filename: '1.7Nightfall · Light Rain.mp3' },
-      { id: '1.8', title: 'Nightfall', artist: 'Heavy Rain', filename: '1.8Nightfall · Heavy Rain.mp3' },
-      { id: '1.9', title: 'Overcast', artist: 'Light Rain', filename: '1.9Overcast · Light Rain.mp3' },
-      { id: '1.10', title: 'Overcast', artist: 'Heavy Rain', filename: '1.10Overcast · Heavy Rain.mp3' },
-      { id: '1.11', title: 'Overcast', artist: 'Torrential', filename: '1.11Overcast · Torrential Rain.mp3' },
-      { id: '1.12', title: 'Overcast', artist: 'Dense Fog', filename: '1.12Overcast · Dense Fog.mp3' },
-      { id: '1.13', title: 'Overcast', artist: 'Light Snow', filename: '1.13Overcast · Light Snow.mp3' },
-    ]
-  },
-  {
-    id: 'OST',
-    label: 'ARCHIVE // OST',
-    tracks: [
-      { 
-        id: '2.1', 
-        title: 'The Storm', 
-        artist: 'Adam Gubman', 
-        filename: 'ost_1.mp3' 
-      },
-      { 
-        id: '2.2', 
-        title: 'Satin Matin', 
-        artist: 'Vertin', 
-        filename: 'ost_2.mp3' 
-      }
-    ]
-  },
-  {
-    id: 'PVT',
-    label: 'CASSETTE // PERSONAL',
-    tracks: [
-      { 
-        id: '3.1', 
-        title: 'TEST AUDIO', 
-        artist: 'SYSTEM CHECK', 
-        // ENSURE: /public/music/test.mp3 exists for testing
-        filename: 'test.mp3' 
-      },
-      { 
-        id: '3.2', 
-        title: 'My Favorite Song', 
-        artist: 'Artist Name', 
-        filename: 'fav_1.mp3' 
-      }
-    ]
-  }
-];
+const MusicPage: React.FC<PageProps> = ({ viewMode, musicPlayer }) => {
+  if (!musicPlayer) return null;
 
-const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
-  // Flatten tracks for easy indexing
-  const allTracks = useMemo(() => OST_DATABASE.flatMap(cat => cat.tracks), []);
-  
-  // --- STATE ---
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+      currentSong,
+      isPlaying,
+      isLoading,
+      loopMode,
+      currentTime,
+      duration,
+      debugInfo,
+      togglePlay,
+      toggleLoopMode,
+      nextTrack,
+      prevTrack,
+      playTrackById,
+      seek
+  } = musicPlayer;
+
   const [isDbOpen, setIsDbOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>('LGT'); // Default to Light
-  const [loopMode, setLoopMode] = useState<'playlist' | 'single'>('playlist');
-  
-  // Progress Bar State
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  
-  // --- DEBUG STATE ---
-  const [debugInfo, setDebugInfo] = useState({
-      src: '',
-      readyState: 0,
-      error: null as string | null,
-      httpStatus: 'CHECKING...' as string | number
-  });
-
-  const currentSong = allTracks[currentTrackIndex];
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  // --- DIAGNOSTIC HELPERS ---
-  const checkFileAccess = async (path: string) => {
-      try {
-          const response = await fetch(path, { method: 'HEAD' });
-          if (response.ok) {
-              setDebugInfo(prev => ({ ...prev, httpStatus: response.status }));
-          } else {
-              setDebugInfo(prev => ({ ...prev, httpStatus: `${response.status} (MISSING)` }));
-          }
-      } catch (e) {
-          setDebugInfo(prev => ({ ...prev, httpStatus: 'NET_ERR' }));
-      }
-  };
-
-  // --- AUDIO ACTIONS ---
-
-  const getTrackPath = (filename: string) => {
-      // Encode URI component to handle spaces and special chars in filenames
-      return `music/${encodeURIComponent(filename)}`;
-  };
-
-  const loadTrack = (index: number) => {
-      if (!audioRef.current) return;
-      
-      const track = allTracks[index];
-      const src = getTrackPath(track.filename);
-      
-      setIsLoading(true);
-      setCurrentTrackIndex(index);
-      setCurrentTime(0); // Reset time on new track
-      
-      setDebugInfo(prev => ({ ...prev, src: decodeURIComponent(src), error: null, httpStatus: 'CHECKING...' }));
-      checkFileAccess(src);
-
-      audioRef.current.src = src;
-      audioRef.current.load();
-      
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-          playPromise
-            .then(() => { /* handled by onPlay */ })
-            .catch(error => {
-                console.warn("[Music] Auto-play prevented:", error);
-            });
-      }
-  };
-
-  const togglePlay = () => {
-      if (!audioRef.current) return;
-
-      if (debugInfo.error) {
-          loadTrack(currentTrackIndex);
-          return;
-      }
-
-      if (audioRef.current.paused) {
-          audioRef.current.play().catch(e => {
-              if (!audioRef.current?.currentSrc) {
-                  loadTrack(currentTrackIndex);
-              }
-          });
-      } else {
-          audioRef.current.pause();
-      }
-  };
-
-  const toggleLoopMode = () => {
-      setLoopMode(prev => prev === 'playlist' ? 'single' : 'playlist');
-  };
-
-  const nextTrack = () => {
-      let nextIndex = currentTrackIndex + 1;
-      if (nextIndex >= allTracks.length) nextIndex = 0;
-      loadTrack(nextIndex);
-  };
-
-  const prevTrack = () => {
-      let prevIndex = currentTrackIndex - 1;
-      if (prevIndex < 0) prevIndex = allTracks.length - 1;
-      loadTrack(prevIndex);
-  };
-
-  const playTrackById = (trackId: string) => {
-      const idx = allTracks.findIndex(t => t.id === trackId);
-      if (idx !== -1) loadTrack(idx);
-  };
-
-  // --- EVENT HANDLERS ---
-
-  const onPlay = () => setIsPlaying(true);
-  const onPause = () => setIsPlaying(false);
-  const onCanPlay = () => {
-      setIsLoading(false);
-      setDebugInfo(prev => ({ ...prev, error: null }));
-  };
-  
-  const onError = (e: any) => {
-      setIsLoading(false);
-      setIsPlaying(false);
-      const err = e.target.error;
-      let msg = "UNKNOWN";
-      if (err) {
-          if (err.code === 4) msg = "ERR:4 (NOT_FOUND)";
-          if (err.code === 3) msg = "ERR:3 (DECODE)";
-          if (err.code === 2) msg = "ERR:2 (NETWORK)";
-          if (err.code === 1) msg = "ERR:1 (ABORTED)";
-      }
-      setDebugInfo(prev => ({ ...prev, error: msg }));
-  };
-
-  // Time Updates
-  const onTimeUpdate = () => {
-      if (audioRef.current) {
-          setCurrentTime(audioRef.current.currentTime);
-      }
-  };
-
-  const onLoadedMetadata = () => {
-      if (audioRef.current) {
-          setDuration(audioRef.current.duration);
-      }
-  };
+  const [selectedCategory, setSelectedCategory] = useState<string | null>('LGT');
 
   // Seek Handler
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (!audioRef.current || !duration) return;
-      
+      if (!duration) return;
       const rect = e.currentTarget.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const pct = Math.max(0, Math.min(1, x / rect.width));
       const newTime = pct * duration;
-      
-      audioRef.current.currentTime = newTime;
-      setCurrentTime(newTime);
+      seek(newTime);
   };
-
-  // Handle Track End based on Loop Mode
-  const onEnded = () => {
-      if (loopMode === 'playlist') {
-          nextTrack();
-      }
-      // If loopMode is single, the <audio loop> attribute handles it automatically
-  };
-
-  // Initial Load
-  useEffect(() => {
-     if (audioRef.current && !audioRef.current.src) {
-         const firstSrc = getTrackPath(allTracks[0].filename);
-         audioRef.current.src = firstSrc;
-         setDebugInfo(prev => ({ ...prev, src: decodeURIComponent(firstSrc) }));
-         checkFileAccess(firstSrc);
-     }
-  }, []);
-
-  // Periodic Debug Update
-  useEffect(() => {
-      const interval = setInterval(() => {
-          if (audioRef.current) {
-              setDebugInfo(prev => ({
-                  ...prev,
-                  readyState: audioRef.current!.readyState,
-              }));
-          }
-      }, 500);
-      return () => clearInterval(interval);
-  }, []);
-
 
   return (
     <div className="relative h-full w-full flex items-center justify-center animate-fade-in overflow-hidden bg-retro-paper">
       
-      <audio 
-        ref={audioRef}
-        loop={loopMode === 'single'} 
-        onPlay={onPlay}
-        onPause={onPause}
-        onCanPlay={onCanPlay}
-        onEnded={onEnded}
-        onError={onError}
-        onTimeUpdate={onTimeUpdate}
-        onLoadedMetadata={onLoadedMetadata}
-        preload="auto"
-      />
+      {/* Note: <audio> tag is now in App.tsx for global persistence */}
 
       {/* --- BACKGROUND DECORATION (The Vinyl) --- */}
       <div className={`
@@ -299,7 +65,7 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
           ${viewMode === ViewMode.MAIN ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-10 pointer-events-none'}
       `}>
           
-          {/* Loop Toggle Button - ABSOLUTE TOP LEFT OF MAIN VIEW CONTAINER */}
+          {/* Loop Toggle Button - ABSOLUTE TOP LEFT */}
           <div className="absolute top-8 left-8 md:top-12 md:left-12">
               <button 
                   onClick={toggleLoopMode}
@@ -394,7 +160,6 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
                 ${isDbOpen ? 'opacity-0 pointer-events-none translate-x-10' : 'opacity-100 pointer-events-auto translate-x-0'}
            `}>
                <div className="bg-[#0a0a0a] border-2 border-[#333] p-2 shadow-lg font-mono text-xs w-[25vmin] min-w-[180px] overflow-hidden group hover:opacity-100 opacity-80 transition-opacity">
-                   {/* Scanlines */}
                    <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_4px,6px_100%] opacity-20"></div>
                    
                    <div className="relative z-10 text-[#ffb74d] flex flex-col gap-1">
@@ -431,7 +196,7 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
                        </h2>
                    </div>
                    
-                   {/* VISUALIZER BAR (REVERTED TO DECORATIVE) */}
+                   {/* VISUALIZER BAR (DECORATIVE) */}
                    <div className="w-full h-1 bg-retro-gray/20 mb-8 flex items-center gap-2 overflow-hidden">
                         {isLoading ? (
                             <div className="h-full w-full bg-retro-gold animate-[scan_1s_linear_infinite] origin-left"></div>
@@ -485,7 +250,7 @@ const MusicPage: React.FC<PageProps> = ({ viewMode }) => {
                              ))}
                         </div>
 
-                        {/* Track List - Optimized for Mobile Touch */}
+                        {/* Track List */}
                         <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pb-10 pr-1 touch-pan-y">
                             {selectedCategory ? (
                                 OST_DATABASE.find(c => c.id === selectedCategory)?.tracks.map((track) => {
