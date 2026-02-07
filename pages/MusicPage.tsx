@@ -35,6 +35,11 @@ const MusicPage: React.FC<PageProps> = ({ viewMode, musicPlayer }) => {
       seek(newTime);
   };
 
+  // Stop propagation for scrollable areas so touch doesn't trigger global App navigation
+  const handleScrollAreaTouch = (e: React.TouchEvent) => {
+      e.stopPropagation();
+  };
+
   return (
     <div className="relative h-full w-full flex items-center justify-center animate-fade-in overflow-hidden bg-retro-paper">
       
@@ -232,7 +237,12 @@ const MusicPage: React.FC<PageProps> = ({ viewMode, musicPlayer }) => {
                     
                     <div className="flex gap-4 h-full overflow-hidden pb-4">
                         {/* Category List */}
-                        <div className="w-[30%] flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-2 pt-2">
+                        <div 
+                            className="w-[30%] flex flex-col gap-3 overflow-y-auto custom-scrollbar pr-2 pt-2"
+                            onTouchStart={handleScrollAreaTouch}
+                            onTouchMove={handleScrollAreaTouch}
+                            onTouchEnd={handleScrollAreaTouch}
+                        >
                              {OST_DATABASE.map(cat => (
                                  <button
                                     key={cat.id}
@@ -251,7 +261,12 @@ const MusicPage: React.FC<PageProps> = ({ viewMode, musicPlayer }) => {
                         </div>
 
                         {/* Track List */}
-                        <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pb-10 pr-1 touch-pan-y">
+                        <div 
+                            className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar pb-10 pr-1 touch-pan-y"
+                            onTouchStart={handleScrollAreaTouch}
+                            onTouchMove={handleScrollAreaTouch}
+                            onTouchEnd={handleScrollAreaTouch}
+                        >
                             {selectedCategory ? (
                                 OST_DATABASE.find(c => c.id === selectedCategory)?.tracks.map((track) => {
                                     const isCurrent = track.id === currentSong.id;
