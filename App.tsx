@@ -9,6 +9,7 @@ import { PageId, ViewMode } from './types';
 import { PAGES } from './constants';
 import { useFocusTimer } from './hooks/useFocusTimer';
 import { useMusicPlayer } from './hooks/useMusicPlayer';
+import { useDeviceStatus } from './hooks/useDeviceStatus';
 
 const App: React.FC = () => {
   const [pageIndex, setPageIndex] = useState(0);
@@ -18,6 +19,7 @@ const App: React.FC = () => {
   // Global State Hooks
   const focusTimer = useFocusTimer();
   const musicPlayer = useMusicPlayer();
+  const deviceStatus = useDeviceStatus();
   
   // Audio Refs for Global Alarm
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -181,7 +183,7 @@ const App: React.FC = () => {
   const isAsleep = verticalLevel === 0;
 
   const renderPage = () => {
-    const props = { viewMode: currentViewMode };
+    const props = { viewMode: currentViewMode, deviceStatus };
     
     switch (PAGES[pageIndex]) {
       case PageId.TIME: return <TimePage {...props} />;
@@ -313,7 +315,7 @@ const App: React.FC = () => {
             <div className="absolute bottom-2 right-2 w-16 h-16 border-b-2 border-r-2 border-retro-gold opacity-60"></div>
         </div>
 
-        <InfoBar currentPage={PAGES[pageIndex]} />
+        <InfoBar currentPage={PAGES[pageIndex]} deviceStatus={deviceStatus} />
 
         <main className="flex-1 relative overflow-hidden flex flex-col">
             <div className="flex-1 w-full h-full relative z-10 p-4 md:p-8 flex flex-col justify-center">

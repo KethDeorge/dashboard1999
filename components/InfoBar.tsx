@@ -1,14 +1,14 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { PageId } from '../types';
-import { MOCK_WEATHER } from '../constants';
+import { DeviceStatus, PageId } from '../types';
 
 interface InfoBarProps {
   currentPage: PageId;
+  deviceStatus: DeviceStatus;
 }
 
-const InfoBar: React.FC<InfoBarProps> = ({ currentPage }) => {
+const InfoBar: React.FC<InfoBarProps> = ({ currentPage, deviceStatus }) => {
   const [dateStr, setDateStr] = useState('');
   const [timeStr, setTimeStr] = useState('');
 
@@ -44,11 +44,11 @@ const InfoBar: React.FC<InfoBarProps> = ({ currentPage }) => {
       <div className="flex flex-col items-start font-mono text-retro-brown z-10">
         <div className="flex items-baseline gap-2">
             <span className="text-xl md:text-2xl font-bold text-retro-green tracking-tighter">{timeStr}</span>
-            <span className="text-xs md:text-sm opacity-60">| {MOCK_WEATHER.temp}°C</span>
+            <span className="text-xs md:text-sm opacity-60">| {deviceStatus.weather ? `${deviceStatus.weather.temp}°C` : '--°C'}</span>
         </div>
         <div className="flex items-center gap-2 text-[10px] md:text-xs tracking-widest opacity-80 mt-1">
             <div className="w-2 h-2 bg-retro-gold rounded-full animate-pulse-slow"></div>
-            <span>{dateStr} // {MOCK_WEATHER.condition.toUpperCase()}</span>
+            <span>{dateStr} // {deviceStatus.weather?.condition.toUpperCase() ?? (deviceStatus.weatherState === 'denied' ? 'LOCATION DENIED' : 'WEATHER UNAVAILABLE')}</span>
         </div>
       </div>
 
@@ -77,11 +77,11 @@ const InfoBar: React.FC<InfoBarProps> = ({ currentPage }) => {
       {/* Right: Tech readout */}
       <div className="flex flex-col items-end font-mono text-[10px] md:text-xs text-retro-gray z-10">
         <div className="border border-retro-gray/40 px-2 py-0.5 rounded-sm text-retro-green bg-retro-green/10 mb-1 flex gap-2">
-            <span className="animate-pulse">●</span> SYS.ONLINE
+            <span className={deviceStatus.isOnline ? 'animate-pulse' : 'text-retro-red'}>●</span> {deviceStatus.isOnline ? 'SYS.ONLINE' : 'SYS.OFFLINE'}
         </div>
         <div className="flex gap-2 opacity-50 font-bold">
-            <span>[BAT.99%]</span>
-            <span>[NET.OK]</span>
+            <span>[BAT.{deviceStatus.batteryPercent ?? '--'}%]</span>
+            <span>[NET.{deviceStatus.isOnline ? deviceStatus.connectionType.toUpperCase() : 'OFF'}]</span>
         </div>
       </div>
     </div>

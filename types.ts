@@ -23,6 +23,7 @@ export interface PageProps {
   viewMode: ViewMode;
   focusTimer?: FocusTimerHook;
   musicPlayer?: MusicPlayerHook;
+  deviceStatus?: DeviceStatus;
 }
 
 export interface Task {
@@ -35,6 +36,17 @@ export interface Task {
 export interface WeatherData {
   temp: number;
   condition: string;
+}
+
+export interface DeviceStatus {
+  batteryPercent: number | null;
+  isCharging: boolean | null;
+  isOnline: boolean;
+  connectionType: string;
+  latencyMs: number | null;
+  memoryPercent: number | null;
+  weather: WeatherData | null;
+  weatherState: 'loading' | 'ready' | 'denied' | 'unavailable';
 }
 
 export interface MusicTrack {
